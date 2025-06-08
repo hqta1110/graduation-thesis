@@ -448,7 +448,13 @@ const PlantLibrary = () => {
       setError(null);
       
       try {
-        const fetchPromise = fetch(`${API_URL}/api/plants`);
+        const fetchPromise = fetch(`${API_URL}/api/plants`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000)
         );
