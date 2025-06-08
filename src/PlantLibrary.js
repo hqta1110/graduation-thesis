@@ -364,7 +364,13 @@ const PlantLibrary = () => {
     setImagesLoading(true);
     try {
       const apiUrl = `${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`;
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch images (HTTP ${response.status})`);
