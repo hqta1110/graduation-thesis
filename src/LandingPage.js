@@ -15,7 +15,13 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchFeaturedPlants = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/plants`);
+        const response = await fetch(`${API_URL}/api/plants`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'  // Add this header!
+          }
+        });
         const data = await response.json();
         
         // Convert the data object to an array of plants
