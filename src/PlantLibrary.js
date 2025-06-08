@@ -364,6 +364,8 @@ const PlantLibrary = () => {
     setImagesLoading(true);
     try {
       const apiUrl = `${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`;
+      
+      // Try to fetch detailed images from backend
       const response = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
@@ -372,40 +374,51 @@ const PlantLibrary = () => {
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch images (HTTP ${response.status})`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.images && data.images.length > 0) {
-        const processedImages = data.images.map(img => {
-          const fullPath = img.path || '';
-          const pathParts = fullPath.split('/');
-          const speciesFolder = pathParts[pathParts.length - 2];
-          const filename = pathParts[pathParts.length - 1];
-          const processedPath = `/plant-images/${encodeURIComponent(speciesFolder)}/${filename}`;
-          
-          return {
-            ...img,
-            original_path: img.path,
-            path: processedPath,
-            is_primary: img.is_primary || false,
-            order: img.order || 0
-          };
-        });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Raw API response:', data); // Debug log
         
-        setPlantImages(processedImages);
-      } else {
-        setPlantImages([{ 
-          path: selectedPlant.imagePath,
-          filename: 'representative.jpg',
-          is_primary: true,
-          order: 1
-        }]);
+        if (data.images && data.images.length > 0) {
+          // Process detailed images - IMPORTANT: Use full ngrok URLs
+          const processedImages = data.images.map(img => {
+            // Construct full ngrok URL for each image
+            const fullImageUrl = `${API_URL}/plant-images/${encodeURIComponent(scientificName)}/${img.filename}`;
+            console.log('Processed image URL:', fullImageUrl); // Debug log
+            
+            return {
+              ...img,
+              path: fullImageUrl, // This is the key fix!
+              is_primary: img.is_primary || false,
+              order: img.order || 0
+            };
+          });
+          
+          console.log('Setting processed images:', processedImages); // Debug log
+          setPlantImages(processedImages);
+          return; // Success - exit early
+        }
       }
+      
+      // Fallback to representative image if API fails or returns no images
+      console.log('No detailed images found, using representative image fallback');
+      setPlantImages([{ 
+        path: selectedPlant.imagePath, // Keep original path for representative images
+        filename: 'representative.jpg',
+        is_primary: true,
+        order: 1
+      }]);
+      
     } catch (error) {
-      console.error('Error in fetchPlantImages:', error);
+      console.error('Error fetching detailed images:', error);
+      
+      // Fallback to representative image on error
+      console.log('Using representative image fallback due to error');
+      setPlantImages([{ 
+        path: selectedPlant.imagePath,
+        filename: 'representative.jpg',
+        is_primary: true,
+        order: 1
+      }]);
     } finally {
       setImagesLoading(false);
     }
