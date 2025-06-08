@@ -1,0 +1,905 @@
+/* Enhanced App.css with modern animations and effects */
+
+/* Basic styles */
+body {
+  background-color: #f4f6f8; /* Light background for the page */
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-y: overlay; /* Better scrollbar behavior */
+}
+
+.title {
+  margin-bottom: 2rem;
+  color: #1b5e20; /* Darker green for title */
+  font-weight: 600;
+  position: relative;
+  /* Text shadow for better legibility */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Button hover effects */
+.MuiButton-contained {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.MuiButton-contained::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+  pointer-events: none;
+}
+
+.MuiButton-contained:hover::before {
+  left: 100%;
+}
+
+/* Card hover effects and animations */
+.plant-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.3s ease, 
+              border-color 0.3s ease;
+  will-change: transform, box-shadow;
+  overflow: hidden;
+  backface-visibility: hidden; /* Helps with performance */
+  transform: perspective(1000px) translateZ(0); /* Helps with performance */
+}
+
+.plant-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.plant-card .MuiCardMedia-root {
+  transition: transform 0.5s ease;
+}
+
+.plant-card:hover .MuiCardMedia-root {
+  transform: scale(1.05);
+}
+
+/* Classification card with enhanced effects */
+.classification-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2px solid transparent;
+  border-radius: 8px !important;
+  overflow: hidden;
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+}
+
+.classification-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.classification-card.selected {
+  border: 3px solid #2e7d32;
+  box-shadow: 0 8px 16px rgba(46, 125, 50, 0.4);
+  transform: translateY(-5px) scale(1.03);
+}
+
+/* Improved animations for component transitions */
+.fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.26, 0.54, 0.32, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced card entrance animation */
+.card-entrance {
+  animation: cardEntrance 0.6s cubic-bezier(0.26, 0.54, 0.32, 1) forwards;
+  animation-fill-mode: both;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Animated loading skeleton */
+.loading-skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Button ripple effect */
+.ripple-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-button span.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Enhanced tabs with indicator animation */
+.mode-tabs .MuiTabs-indicator {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced search input */
+.search-input {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(46, 125, 50, 0.15);
+}
+
+/* Smoother page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Animated answer section */
+.answer-text {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered plant card entrance */
+.plant-card-stagger {
+  opacity: 0;
+  animation: cardEntrance 0.6s cubic-bezier(0.26, 0.54, 0.32, 1) forwards;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  70% {
+    transform: scale(1.03) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Heartbeat effect for certain UI elements */
+.heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+}
+
+/* Enhanced Image Zoom Effect */
+.zoomable-image {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.zoomable-image img {
+  transition: transform 0.5s ease;
+  transform-origin: center center;
+}
+
+.zoomable-image:hover img {
+  transform: scale(1.1);
+}
+
+/* Plant Detail View Animation */
+.plant-detail-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.plant-detail-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.plant-detail-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.plant-detail-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+/* Optimize for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .fade-in,
+  .card-entrance,
+  .plant-card-stagger,
+  .heartbeat,
+  .answer-text {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  .plant-card:hover,
+  .classification-card:hover,
+  .classification-card.selected {
+    transform: none !important;
+  }
+  
+  .zoomable-image:hover img {
+    transform: none !important;
+  }
+}
+
+/* NEW ADDITIONS: Enhanced animation effects */
+
+/* Breathing animation for featured content */
+.breathing {
+  animation: breathing 6s ease-in-out infinite;
+}
+
+@keyframes breathing {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* Subtle floating animation */
+.floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Glowing border effect for highlighting */
+.glow-border {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #2e7d32, #60ad5e, #ff9800, #2e7d32) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.glow-border:hover::after {
+  opacity: 1;
+  animation: border-glow 2s linear infinite;
+}
+
+@keyframes border-glow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 130% 50%;
+  }
+}
+
+/* 3D card flip effect */
+.card-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-3d-inner {
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover .card-3d-inner {
+  transform: rotateY(180deg);
+}
+
+.card-3d-front,
+.card-3d-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.card-3d-back {
+  transform: rotateY(180deg);
+}
+
+/* Staggered reveal animation for lists */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-appear {
+  animation: staggerAppear 0.5s ease forwards;
+}
+
+@keyframes staggerAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shiny button effect */
+.shiny-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.shiny-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(45deg);
+  transition: all 0.3s;
+  opacity: 0;
+}
+
+.shiny-button:hover::before {
+  animation: shine 1.2s infinite;
+  opacity: 1;
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+  10% {
+    left: -100%;
+    opacity: 1;
+  }
+  60% {
+    left: 100%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+/* Improved hover card with info reveal */
+.info-reveal-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.info-reveal-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99);
+  padding: 16px;
+}
+
+.info-reveal-card:hover .info-reveal-content {
+  transform: translateY(0);
+}
+
+/* Improved scrolling animations */
+.scroll-fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.scroll-fade-in.appear {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Focus highlight effect for input fields */
+.focus-highlight {
+  transition: all 0.3s ease;
+}
+
+.focus-highlight:focus-within {
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.3);
+}
+/* Landing page specific styles */
+.landing-page-container {
+  min-height: 100vh;
+  background-color: #f4f9f4;
+}
+
+/* Landing page floating elements animation */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(20px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.rotating-element {
+  animation: rotate 20s linear infinite;
+}
+
+.pulsing-element {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* Button hover effects for landing page */
+.landing-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+  pointer-events: none;
+}
+
+.landing-button:hover::after {
+  left: 100%;
+}
+
+/* Card hover effects for landing page */
+.feature-card {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.3s ease, 
+              border-color 0.3s ease;
+  will-change: transform, box-shadow;
+  overflow: hidden;
+}
+
+.feature-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Improved card media effects */
+.feature-icon {
+  font-size: 100px;
+  color: white;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Back to landing page button */
+.back-to-landing {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2e7d32;
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.back-to-landing:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Featured plant cards */
+.featured-plant-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.featured-plant-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.featured-plant-card img {
+  transition: transform 0.5s ease;
+}
+
+.featured-plant-card:hover img {
+  transform: scale(1.1);
+}
+
+.featured-plant-card .card-content {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  color: white;
+}
+
+/* Statistics counter animation */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-counter {
+  animation: countUp 1s ease-out forwards;
+}
+
+.stat-card {
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 50%);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Staggered entrance animations */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-item.animate {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Decorative background patterns */
+.bg-pattern {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bg-pattern-top-right {
+  top: 50px;
+  right: 0;
+  opacity: 0.05;
+  transform: rotate(45deg);
+}
+
+.bg-pattern-bottom-left {
+  bottom: 50px;
+  left: 0;
+  opacity: 0.05;
+  transform: rotate(-45deg);
+}
+
+/* Hero section styling */
+.hero-section {
+  position: relative;
+  padding: 100px 0;
+  background: linear-gradient(135deg, #f4f9f4 0%, #e8f5e9 100%);
+  overflow: hidden;
+}
+
+.hero-title {
+  font-weight: 700;
+  color: #1b5e20;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-title::after {
+  content: "";
+  position: absolute;
+  width: 60%;
+  height: 4px;
+  bottom: -10px;
+  left: 20%;
+  background-color: #ff9800;
+  border-radius: 2px;
+}
+
+.hero-subtitle {
+  margin-top: 24px;
+  margin-bottom: 48px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .hero-section {
+    padding: 60px 0;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+    margin-bottom: 32px;
+  }
+  
+  .feature-card {
+    flex-direction: column;
+  }
+  
+  .feature-media {
+    width: 100%;
+    height: 160px;
+  }
+}
+
+/* Reduce animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .floating-element,
+  .rotating-element,
+  .pulsing-element {
+    animation: none;
+  }
+  
+  .feature-card:hover,
+  .featured-plant-card:hover,
+  .stat-card:hover {
+    transform: none;
+  }
+  
+  .feature-card:hover .feature-icon,
+  .featured-plant-card:hover img {
+    transform: none;
+  }
+  
+  .landing-button::after,
+  .stat-card::before {
+    display: none;
+  }
+  
+  .stagger-item {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  
+  @keyframes countUp {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
