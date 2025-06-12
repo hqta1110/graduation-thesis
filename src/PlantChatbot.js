@@ -16,6 +16,7 @@ import PlantIcon from '@mui/icons-material/LocalFlorist';
 import BotIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ReactMarkdown from 'react-markdown';
 
 // API endpoint for the backend
 const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
@@ -536,19 +537,156 @@ const PlantChatbot = () => {
     return `/representative_images/${safeLabel}.jpg`;
   };
   
+  // Custom markdown components with Material-UI styling
+  const markdownComponents = {
+    h1: ({ children }) => (
+      <Typography variant="h4" component="h1" gutterBottom sx={{ 
+        fontWeight: 600, 
+        color: 'primary.dark',
+        mt: 2,
+        mb: 1.5
+      }}>
+        {children}
+      </Typography>
+    ),
+    h2: ({ children }) => (
+      <Typography variant="h5" component="h2" gutterBottom sx={{ 
+        fontWeight: 600, 
+        color: 'primary.dark',
+        mt: 2,
+        mb: 1.5
+      }}>
+        {children}
+      </Typography>
+    ),
+    h3: ({ children }) => (
+      <Typography variant="h6" component="h3" gutterBottom sx={{ 
+        fontWeight: 600, 
+        color: 'primary.main',
+        mt: 1.5,
+        mb: 1
+      }}>
+        {children}
+      </Typography>
+    ),
+    p: ({ children }) => (
+      <Typography variant="body1" paragraph sx={{ mb: 1.5, lineHeight: 1.6 }}>
+        {children}
+      </Typography>
+    ),
+    strong: ({ children }) => (
+      <Typography component="span" sx={{ fontWeight: 'bold', color: 'primary.dark' }}>
+        {children}
+      </Typography>
+    ),
+    em: ({ children }) => (
+      <Typography component="span" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+        {children}
+      </Typography>
+    ),
+    ul: ({ children }) => (
+      <Box component="ul" sx={{ 
+        pl: 3, 
+        mb: 2,
+        '& > li': {
+          mb: 0.5,
+          '&::marker': {
+            color: 'primary.main'
+          }
+        }
+      }}>
+        {children}
+      </Box>
+    ),
+    ol: ({ children }) => (
+      <Box component="ol" sx={{ 
+        pl: 3, 
+        mb: 2,
+        '& > li': {
+          mb: 0.5,
+          '&::marker': {
+            color: 'primary.main',
+            fontWeight: 'bold'
+          }
+        }
+      }}>
+        {children}
+      </Box>
+    ),
+    li: ({ children }) => (
+      <Typography component="li" variant="body1" sx={{ lineHeight: 1.6 }}>
+        {children}
+      </Typography>
+    ),
+    blockquote: ({ children }) => (
+      <Box sx={{
+        borderLeft: 4,
+        borderColor: 'primary.main',
+        pl: 2,
+        py: 1,
+        bgcolor: alpha(theme.palette.primary.main, 0.05),
+        borderRadius: '0 4px 4px 0',
+        mb: 2,
+        fontStyle: 'italic'
+      }}>
+        {children}
+      </Box>
+    ),
+    code: ({ children, inline }) => (
+      inline ? (
+        <Typography component="code" sx={{
+          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          color: 'primary.dark',
+          px: 0.5,
+          py: 0.25,
+          borderRadius: 1,
+          fontSize: '0.9em',
+          fontFamily: 'monospace'
+        }}>
+          {children}
+        </Typography>
+      ) : (
+        <Box component="pre" sx={{
+          bgcolor: alpha(theme.palette.primary.main, 0.05),
+          p: 2,
+          borderRadius: 2,
+          overflow: 'auto',
+          mb: 2,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          '& code': {
+            fontFamily: 'monospace',
+            fontSize: '0.9em'
+          }
+        }}>
+          <code>{children}</code>
+        </Box>
+      )
+    )
+  };
+  
   // Render message based on its type
   const renderMessage = (message) => {
     switch (message.type) {
       case MESSAGE_TYPE.TEXT:
         return (
-          <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
+          <Box>
             {message.isProcessing ? (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <CircularProgress size={16} sx={{ mr: 1 }} />
-                {message.content}
+                <Typography variant="body1">{message.content}</Typography>
               </Box>
-            ) : message.content}
-          </Typography>
+            ) : message.sender === SENDER.BOT ? (
+              // Render bot messages with markdown
+              <ReactMarkdown components={markdownComponents}>
+                {message.content}
+              </ReactMarkdown>
+            ) : (
+              // Render user messages as plain text
+              <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
+                {message.content}
+              </Typography>
+            )}
+          </Box>
         );
         
       case MESSAGE_TYPE.IMAGE:
