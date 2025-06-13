@@ -16,6 +16,8 @@ import PlantIcon from '@mui/icons-material/LocalFlorist';
 import BotIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import KeyboardIcon from '@mui/icons-материал/Keyboard';
 import ReactMarkdown from 'react-markdown';
 
 // API endpoint for the backend
@@ -42,6 +44,7 @@ const PlantChatbot = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const textFieldRef = useRef(null);
   
   // Main state
   const [messages, setMessages] = useState([
@@ -67,10 +70,127 @@ const PlantChatbot = () => {
   const [classificationLoading, setClassificationLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState(null);
 
+  // Clipboard paste state
+  const [pasteIndicator, setPasteIndicator] = useState(false);
+  const [pasteSuccess, setPasteSuccess] = useState(false);
+  const [pasteError, setPasteError] = useState(null);
+  const [showPasteHint, setShowPasteHint] = useState(true);
+
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Clipboard paste functionality
+  useEffect(() => {
+    const handlePaste = async (event) => {
+      // Only handle paste when the chat interface is focused or no specific input is focused
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true'
+      );
+
+      // If pasting into the message input field, don't handle image paste
+      if (isInputFocused && activeElement === textFieldRef.current?.querySelector('textarea')) {
+        return;
+      }
+
+      const clipboardItems = event.clipboardData?.items;
+      if (!clipboardItems) return;
+
+      const imageItems = Array.from(clipboardItems).filter(item => 
+        item.type.startsWith('image/')
+      );
+
+      if (imageItems.length === 0) return;
+
+      // Prevent default paste behavior for images
+      event.preventDefault();
+      
+      try {
+        setPasteIndicator(true);
+        setPasteError(null);
+        setShowPasteHint(false);
+
+        const newFiles = [];
+        const newPreviewUrls = [];
+
+        for (const item of imageItems) {
+          const blob = item.getAsFile();
+          if (blob) {
+            // Create a more descriptive filename
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const extension = blob.type.split('/')[1] || 'png';
+            const filename = `pasted-image-${timestamp}.${extension}`;
+            
+            // Create a File object with proper name
+            const file = new File([blob], filename, { type: blob.type });
+            
+            newFiles.push(file);
+            newPreviewUrls.push(URL.createObjectURL(blob));
+          }
+        }
+
+        if (newFiles.length > 0) {
+          // Add to existing files and previews
+          setImageFiles(prev => [...prev, ...newFiles]);
+          setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
+          
+          // Show success indicator
+          setPasteSuccess(true);
+          setTimeout(() => setPasteSuccess(false), 2000);
+
+          // Optional: Auto-focus the input after pasting
+          if (textFieldRef.current) {
+            const textarea = textFieldRef.current.querySelector('textarea');
+            if (textarea) {
+              textarea.focus();
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error handling paste:', err);
+        setPasteError('Không thể dán hình ảnh. Vui lòng thử lại.');
+        setTimeout(() => setPasteError(null), 4000);
+      } finally {
+        setPasteIndicator(false);
+      }
+    };
+
+    // Add event listener to document
+    document.addEventListener('paste', handlePaste);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, []);
+
+  // Show paste hint on component mount, hide after user interaction
+  useEffect(() => {
+    const hideHintTimer = setTimeout(() => {
+      setShowPasteHint(false);
+    }, 8000); // Hide hint after 8 seconds
+
+    return () => clearTimeout(hideHintTimer);
+  }, []);
+
+  // Hide paste hint on any user interaction
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      setShowPasteHint(false);
+    };
+
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, []);
   
   // Handle file selection - now supports multiple files
   const handleFileSelect = (event) => {
@@ -91,6 +211,9 @@ const PlantChatbot = () => {
     // Add to existing files and previews
     setImageFiles(prev => [...prev, ...validImageFiles]);
     setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    
+    // Hide paste hint after user uploads files
+    setShowPasteHint(false);
   };
   
   // Remove an individual image
@@ -106,6 +229,7 @@ const PlantChatbot = () => {
   // Trigger file input click
   const triggerFileInput = () => {
     fileInputRef.current.click();
+    setShowPasteHint(false);
   };
   
   // Clear all selected images
@@ -902,6 +1026,78 @@ const PlantChatbot = () => {
           </Typography>
         </Box>
       </Box>
+
+      {/* Paste Hint Banner */}
+      <Fade in={showPasteHint} timeout={1000}>
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 2,
+            mx: { xs: 2, sm: 4 },
+            mt: 2,
+            p: 2,
+            background: 'linear-gradient(90deg, rgba(46, 125, 50, 0.08), rgba(255, 152, 0, 0.08))',
+            borderRadius: 3,
+            border: '1px dashed rgba(46, 125, 50, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+            transition: 'all 0.3s ease',
+          }}
+        >
+          <ContentPasteIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.dark' }}>
+              💡 Mẹo hữu ích: Bạn có thể dán hình ảnh trực tiếp!
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Nhấn <Box component="span" sx={{ 
+                px: 0.5, 
+                py: 0.25, 
+                bgcolor: 'rgba(0,0,0,0.1)', 
+                borderRadius: 1, 
+                fontFamily: 'monospace',
+                fontSize: '0.85em'
+              }}>Ctrl+V</Box> để dán hình ảnh từ clipboard
+            </Typography>
+          </Box>
+          <IconButton 
+            size="small" 
+            onClick={() => setShowPasteHint(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Fade>
+
+      {/* Paste Indicator */}
+      <Fade in={pasteIndicator} timeout={300}>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            bgcolor: 'rgba(46, 125, 50, 0.95)',
+            color: 'white',
+            p: 3,
+            borderRadius: 4,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <CircularProgress size={24} sx={{ color: 'white' }} />
+          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+            Đang xử lý hình ảnh đã dán...
+          </Typography>
+        </Box>
+      </Fade>
       
       {/* Message area - Direct on background with Container */}
       <Box 
@@ -1193,9 +1389,10 @@ const PlantChatbot = () => {
             </Badge>
             
             <TextField
+              ref={textFieldRef}
               fullWidth
               variant="outlined"
-              placeholder="Nhập câu hỏi hoặc đính kèm hình ảnh..."
+              placeholder="Nhập câu hỏi hoặc đính kèm hình ảnh... (Hoặc nhấn Ctrl+V để dán hình ảnh)"
               multiline
               maxRows={4}
               value={inputMessage}
@@ -1404,7 +1601,7 @@ const PlantChatbot = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Error snackbar */}
+      {/* Success/Error Snackbars */}
       <Snackbar
         open={!!error}
         autoHideDuration={6000}
@@ -1421,6 +1618,44 @@ const PlantChatbot = () => {
           }}
         >
           {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={pasteSuccess}
+        autoHideDuration={2000}
+        onClose={() => setPasteSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setPasteSuccess(false)}
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(46, 125, 50, 0.2)'
+          }}
+        >
+          Hình ảnh đã được dán thành công!
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!pasteError}
+        autoHideDuration={4000}
+        onClose={() => setPasteError(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setPasteError(null)}
+          severity="error" 
+          sx={{ 
+            width: '100%',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(211, 47, 47, 0.2)'
+          }}
+        >
+          {pasteError}
         </Alert>
       </Snackbar>
       
