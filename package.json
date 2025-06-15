@@ -23,6 +23,7 @@
     "react-simple-maps": "^3.0.0",
     "react-tooltip": "^5.28.1",
     "recharts": "^2.15.3",
+    "serve": "^14.2.4",
     "three-spritetext": "^1.9.6",
     "web-vitals": "^2.1.4"
   },

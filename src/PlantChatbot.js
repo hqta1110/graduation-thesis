@@ -354,33 +354,52 @@ const PlantChatbot = () => {
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
       
       if (data.results && data.results.length > 0) {
-        // Store classifications
-        setClassifications(data.results);
+        // Check if the result indicates OOD (Out-of-Distribution)
+        const firstResult = data.results[0];
+        const isOOD = firstResult.label === "Không tồn tại trong cơ sở dữ liệu";
         
-        // Show the classifications in the chat
-        setMessages(prev => [...prev, {
-          id: `${messageId}_classification_results`,
-          content: data.results,
-          sender: SENDER.BOT,
-          type: MESSAGE_TYPE.CLASSIFICATION,
-          timestamp: new Date()
-        }]);
-        
-        // Show selection message based on whether there's a pending question
-        const selectionPrompt = questionText 
-          ? 'Vui lòng chọn loài thực vật phù hợp để tiếp tục với câu hỏi của bạn.'
-          : 'Vui lòng chọn loài thực vật phù hợp để tiếp tục.';
+        if (isOOD) {
+          // Handle OOD case - show direct message without selection dialog
+          setMessages(prev => [...prev, {
+            id: `${messageId}_ood_response`,
+            content: 'Xin lỗi, loài thực vật này không nằm trong cơ sở dữ liệu của tôi. Vui lòng thử lại với hình ảnh của các loài thực vật khác.',
+            sender: SENDER.BOT,
+            type: MESSAGE_TYPE.TEXT,
+            timestamp: new Date()
+          }]);
           
-        setMessages(prev => [...prev, {
-          id: `${messageId}_selection_prompt`,
-          content: selectionPrompt,
-          sender: SENDER.BOT,
-          type: MESSAGE_TYPE.TEXT,
-          timestamp: new Date()
-        }]);
-        
-        // Show the plant selection dialog
-        setShowClassificationDialog(true);
+          // Clear pending question since we can't proceed with classification
+          setPendingQuestion(null);
+        } else {
+          // Normal classification results - show selection dialog
+          // Store classifications
+          setClassifications(data.results);
+          
+          // Show the classifications in the chat
+          setMessages(prev => [...prev, {
+            id: `${messageId}_classification_results`,
+            content: data.results,
+            sender: SENDER.BOT,
+            type: MESSAGE_TYPE.CLASSIFICATION,
+            timestamp: new Date()
+          }]);
+          
+          // Show selection message based on whether there's a pending question
+          const selectionPrompt = questionText 
+            ? 'Vui lòng chọn loài thực vật phù hợp để tiếp tục với câu hỏi của bạn.'
+            : 'Vui lòng chọn loài thực vật phù hợp để tiếp tục.';
+            
+          setMessages(prev => [...prev, {
+            id: `${messageId}_selection_prompt`,
+            content: selectionPrompt,
+            sender: SENDER.BOT,
+            type: MESSAGE_TYPE.TEXT,
+            timestamp: new Date()
+          }]);
+          
+          // Show the plant selection dialog
+          setShowClassificationDialog(true);
+        }
       } else {
         // No results found
         setMessages(prev => [...prev, {
