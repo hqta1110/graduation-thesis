@@ -7,6 +7,7 @@ import {
   useMediaQuery, Tooltip, Snackbar, Alert, Stack, Badge, LinearProgress,
   alpha, Container
 } from '@mui/material';
+import { v4 as uuidv4 } from 'uuid';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloseIcon from '@mui/icons-material/Close';
@@ -55,6 +56,7 @@ const PlantChatbot = () => {
       timestamp: new Date(),
     }
   ]);
+  const [sessionId, setSessionId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
@@ -79,6 +81,13 @@ const PlantChatbot = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Generate a new session ID on component mount
+  useEffect(() => {
+  const newSessionId = uuidv4();
+  setSessionId(newSessionId);
+  console.log(`🆔 Generated new session: ${newSessionId.slice(0, 8)}...`);
+  }, []);
 
   // Clipboard paste functionality
   useEffect(() => {
@@ -508,6 +517,7 @@ const PlantChatbot = () => {
             body: JSON.stringify({
               label: selectedPlant,
               question: question,
+              session_id: sessionId
             }),
           });
           
@@ -559,6 +569,7 @@ const PlantChatbot = () => {
         },
         body: JSON.stringify({
           question: question,
+          session_id: sessionId
           // Do not include a label since we don't have a specific plant selected
         }),
       });
@@ -620,6 +631,7 @@ const PlantChatbot = () => {
         body: JSON.stringify({
           label: plantLabel,
           question: question,
+          session_id: sessionId
         }),
       });
       
