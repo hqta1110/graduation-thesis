@@ -290,7 +290,14 @@ const PlantChatbot = () => {
     
     setGalleryLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`);
+      const apiUrl = `${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         const images = data.images || [];
