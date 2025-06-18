@@ -5,7 +5,7 @@ import {
   CardContent, Grid, Chip, Dialog, DialogContent,
   DialogTitle, DialogActions, Fade, Zoom, useTheme,
   useMediaQuery, Tooltip, Snackbar, Alert, Stack, Badge, LinearProgress,
-  alpha, Container
+  alpha, Container, Popover 
 } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import SendIcon from '@mui/icons-material/Send';
@@ -19,7 +19,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import ReactMarkdown from 'react-markdown';
-
+import PlantImageGallery from './PlantImageGallery';
 // API endpoint for the backend
 const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
 const PLACEHOLDER_IMAGE = '/placeholder.png';
@@ -77,6 +77,14 @@ const PlantChatbot = () => {
   const [pasteSuccess, setPasteSuccess] = useState(false);
   const [pasteError, setPasteError] = useState(null);
   const [showPasteHint, setShowPasteHint] = useState(true);
+
+  // HOVER-FEATURE: State for the hover gallery popover
+  const [popoverAnchorEl, setPopoverAnchorEl] = useState(null);
+  const [hoveredPlant, setHoveredPlant] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [imageCache, setImageCache] = useState({});
+  const hoverTimeoutRef = useRef(null);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -272,7 +280,52 @@ const PlantChatbot = () => {
     setImageFiles([]);
     setImagePreviewUrls([]);
   };
-  
+  // HOVER-FEATURE: Function to fetch images for a specific plant
+  const fetchPlantImages = async (scientificName) => {
+    if (imageCache[scientificName]) {
+      setGalleryImages(imageCache[scientificName]);
+      setGalleryLoading(false);
+      return;
+    }
+    
+    setGalleryLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`);
+      if (response.ok) {
+        const data = await response.json();
+        const images = data.images || [];
+        setGalleryImages(images);
+        setImageCache(prev => ({ ...prev, [scientificName]: images }));
+      } else {
+        setGalleryImages([]);
+      }
+    } catch (err) {
+      console.error('Error fetching plant images:', err);
+      setGalleryImages([]);
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  // HOVER-FEATURE: Handlers for mouse enter and leave on classification cards
+  const handleCardMouseEnter = (event, plantLabel) => {
+    clearTimeout(hoverTimeoutRef.current);
+    setPopoverAnchorEl(event.currentTarget);
+    setHoveredPlant(plantLabel);
+    fetchPlantImages(plantLabel);
+  };
+
+  const handlePopoverClose = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setPopoverAnchorEl(null);
+      setHoveredPlant(null);
+      setGalleryImages([]);
+    }, 200); // Small delay to allow moving mouse between card and popover
+  };
+
+  const handlePopoverEnter = () => {
+    clearTimeout(hoverTimeoutRef.current);
+  };
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!inputMessage.trim() && imageFiles.length === 0) return;
@@ -965,6 +1018,8 @@ const PlantChatbot = () => {
               {message.content.map((result, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
                   <Card 
+                  onMouseEnter={(e) => handleCardMouseEnter(e, result.label)}
+                  onMouseLeave={handlePopoverClose}
                     sx={{ 
                       cursor: 'pointer',
                       borderRadius: 4,
@@ -1584,6 +1639,8 @@ const PlantChatbot = () => {
             {classifications.map((result, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <Card 
+                onMouseEnter={(e) => handleCardMouseEnter(e, result.label)}
+                onMouseLeave={handlePopoverClose}
                   sx={{ 
                     cursor: 'pointer',
                     borderRadius: 4,
@@ -1760,6 +1817,42 @@ const PlantChatbot = () => {
           display: { xs: 'none', lg: 'block' }
         }}
       />
+      {/* HOVER-FEATURE: Add the Popover component here */}
+    <Popover
+      sx={{
+        pointerEvents: 'none', // Allow mouse events to pass through to the popover content
+      }}
+      open={Boolean(popoverAnchorEl)}
+      anchorEl={popoverAnchorEl}
+      onClose={handlePopoverClose}
+      anchorOrigin={{
+        vertical: 'center',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'center',
+        horizontal: 'left',
+      }}
+      PaperProps={{
+        onMouseEnter: handlePopoverEnter,
+        onMouseLeave: handlePopoverClose,
+        sx: {
+          pointerEvents: 'auto', // Re-enable pointer events for the popover content
+          ml: 2, // Add some margin from the card
+          borderRadius: 2,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+          width: 350, // Set a fixed width for the gallery
+        }
+      }}
+      disableRestoreFocus
+    >
+      <PlantImageGallery
+        // Pass a minimal plant object and the fetched images
+        plant={{ vietnameseName: hoveredPlant, imagePath: getRepresentativeImagePath(hoveredPlant) }}
+        plantImages={galleryImages}
+        isLoading={galleryLoading}
+      />
+    </Popover>
     </Box>
   );
 };
