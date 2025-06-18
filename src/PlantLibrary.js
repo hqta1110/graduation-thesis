@@ -1214,8 +1214,8 @@ const PlantLibrary = () => {
     <Box
       sx={{ width: { xs: 280, sm: 350 }, p: 3 }}
       role="presentation"
-      onClick={toggleDrawer(false)}
-      onKeyDown={toggleDrawer(false)}
+      // onClick={toggleDrawer(false)}
+      // onKeyDown={toggleDrawer(false)}
     >
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.dark' }}>
         Bộ lọc thực vật
