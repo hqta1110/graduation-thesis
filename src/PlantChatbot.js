@@ -70,7 +70,8 @@ const PlantChatbot = () => {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [classificationLoading, setClassificationLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState(null);
-
+  // Add this after the existing useState declarations
+  const [plantMetadata, setPlantMetadata] = useState({});
   // Clipboard paste state
   const [pasteIndicator, setPasteIndicator] = useState(false);
   const [pasteSuccess, setPasteSuccess] = useState(false);
@@ -89,6 +90,22 @@ const PlantChatbot = () => {
   console.log(`🆔 Generated new session: ${newSessionId.slice(0, 8)}...`);
   }, []);
 
+  // Fetch plant metadata for name mapping
+  useEffect(() => {
+    const fetchPlantMetadata = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/plants`);
+        if (response.ok) {
+          const data = await response.json();
+          setPlantMetadata(data);
+        }
+      } catch (error) {
+        console.error('Error fetching plant metadata:', error);
+      }
+    };
+    
+    fetchPlantMetadata();
+  }, []);
   // Clipboard paste functionality
   useEffect(() => {
     const handlePaste = async (event) => {
@@ -443,7 +460,51 @@ const PlantChatbot = () => {
       setClassificationLoading(false);
     }
   };
-  
+    // Helper function to normalize names for comparison
+    const normalizeName = (name) => {
+      if (!name) return '';
+      return name
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/[^\w\s]/g, '') // Remove special characters except spaces
+        .replace(/\b(subsp|var|cv|f)\b\.?/g, '') // Remove botanical abbreviations
+        .trim();
+    };
+
+    // Helper function to get Vietnamese name from scientific name
+    const getVietnameseName = (scientificName) => {
+      if (!scientificName || !plantMetadata || Object.keys(plantMetadata).length === 0) {
+        return '';
+      }
+      
+      const normalizedSearchName = normalizeName(scientificName);
+      
+      // First try direct match
+      if (plantMetadata[scientificName] && plantMetadata[scientificName]["Tên tiếng Việt"]) {
+        return plantMetadata[scientificName]["Tên tiếng Việt"].split(';')[0].trim();
+      }
+      
+      // Then try normalized matching
+      for (const [key, value] of Object.entries(plantMetadata)) {
+        const normalizedKey = normalizeName(key);
+        if (normalizedKey === normalizedSearchName && value["Tên tiếng Việt"]) {
+          return value["Tên tiếng Việt"].split(';')[0].trim();
+        }
+      }
+      
+      // Finally try partial matching (contains)
+      for (const [key, value] of Object.entries(plantMetadata)) {
+        const normalizedKey = normalizeName(key);
+        if (normalizedKey.includes(normalizedSearchName) || normalizedSearchName.includes(normalizedKey)) {
+          if (value["Tên tiếng Việt"]) {
+            return value["Tên tiếng Việt"].split(';')[0].trim();
+          }
+        }
+      }
+      
+      return ''; // Return empty string if no match found
+    };
   // Handle plant selection
   const handlePlantSelection = async (plantLabel, messageId) => {
     setSelectedPlant(plantLabel);
@@ -943,26 +1004,18 @@ const PlantChatbot = () => {
                       </Box>
                     </Box>
                     <CardContent sx={{ pt: 2, pb: '16px !important' }}>
+                      <Typography variant="subtitle1" component="div" sx={{ 
+                        color: 'primary.dark', 
+                        fontWeight: 600,
+                        mb: 0.5
+                      }}>
+                        {getVietnameseName(result.label) ? getVietnameseName(result.label) : 'Chưa có tên tiếng Việt'}
+                      </Typography>
                       <Box sx={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'space-between'
                       }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Độ tin cậy:
-                        </Typography>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center',
-                          bgcolor: alpha(theme.palette.success.main, 0.1),
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 4,
-                        }}>
-                          <Typography variant="body2" color="success.main" fontWeight={600}>
-                            {(result.confidence * 100).toFixed(1)}%
-                          </Typography>
-                        </Box>
                       </Box>
                     </CardContent>
                   </Card>
@@ -1576,41 +1629,24 @@ const PlantChatbot = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  <CardContent sx={{ 
-                    pt: 2, 
-                    pb: '16px !important', 
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontStyle: 'italic' }}>
-                      {result.label}
-                    </Typography>
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      mt: 1
-                    }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Độ tin cậy:
+                  <CardContent sx={{ pt: 2, pb: '16px !important' }}>
+                      <Typography variant="subtitle1" component="div" sx={{ 
+                        color: 'primary.dark', 
+                        fontWeight: 600,
+                        mb: 0.5
+                      }}>
+                        {getVietnameseName(result.label) ? getVietnameseName(result.label) : 'Chưa có tên tiếng Việt'}
                       </Typography>
+                      
                       <Box sx={{ 
                         display: 'flex', 
-                        alignItems: 'center',
-                        bgcolor: alpha(theme.palette.success.main, 0.1),
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 4,
+                        alignItems: 'center', 
+                        justifyContent: 'space-between'
                       }}>
-                        <Typography variant="body2" color="success.main" fontWeight={600}>
-                          {(result.confidence * 100).toFixed(1)}%
-                        </Typography>
+                        
+                        
                       </Box>
-                    </Box>
-                  </CardContent>
+                    </CardContent>
                 </Card>
               </Grid>
             ))}

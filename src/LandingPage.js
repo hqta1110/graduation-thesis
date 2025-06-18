@@ -110,14 +110,6 @@ const LandingPage = () => {
             >
               Hỏi đáp
             </Button>
-            <Button 
-              variant="outlined" 
-              color="primary" 
-              startIcon={<BarChartIcon />}
-              onClick={() => navigate('/statistics')}
-            >
-            Thống kê
-          </Button>
           </Box>
         </Box>
       </Box>
@@ -167,7 +159,7 @@ const LandingPage = () => {
                   maxWidth: { md: '90%', lg: '80%' } // Slightly narrower than full width for readability
                 }}
               >
-                Khám phá, nhận diện và tìm hiểu về hơn 100 loài thực vật quý hiếm tại Đà Nẵng và Quảng Nam
+                Khám phá, nhận diện và tìm hiểu về hơn 900 loài thực vật quý hiếm tại Đà Nẵng và Quảng Nam
               </Typography>
               
               <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
@@ -374,7 +366,7 @@ const LandingPage = () => {
                 Phiên bản 1.1.0 • {new Date().getFullYear()}
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.6 }}>
-                Nghiên cứu và phát triển bởi Khoa Công nghệ Thông tin, Đại học Bách Khoa Đà Nẵng
+                Nghiên cứu và phát triển bởi sinh viên Khoa Công nghệ Thông tin, Trường Đại học Bách Khoa, Đại học Đà Nẵng
               </Typography>
             </Grid>
           </Grid>
