@@ -94,7 +94,13 @@ const PlantChatbot = () => {
   useEffect(() => {
     const fetchPlantMetadata = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/plants`);
+        const response = await fetch(`${API_URL}/api/plants`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           setPlantMetadata(data);
@@ -477,7 +483,6 @@ const PlantChatbot = () => {
       if (!scientificName || !plantMetadata || Object.keys(plantMetadata).length === 0) {
         return '';
       }
-      window.alert('getVietnameseName called with: ' + scientificName);
       const normalizedSearchName = normalizeName(scientificName);
       
       // First try direct match
