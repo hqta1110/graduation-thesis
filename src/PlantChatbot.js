@@ -477,7 +477,7 @@ const PlantChatbot = () => {
       if (!scientificName || !plantMetadata || Object.keys(plantMetadata).length === 0) {
         return '';
       }
-      
+      window.alert('getVietnameseName called with: ' + scientificName);
       const normalizedSearchName = normalizeName(scientificName);
       
       // First try direct match
