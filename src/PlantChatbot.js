@@ -7,6 +7,8 @@ import {
   useMediaQuery, Tooltip, Snackbar, Alert, Stack, Badge, LinearProgress,
   alpha, Container, Popover 
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
 import { v4 as uuidv4 } from 'uuid';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -40,6 +42,7 @@ const SENDER = {
 };
 
 const PlantChatbot = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const messagesEndRef = useRef(null);
@@ -1141,7 +1144,7 @@ const PlantChatbot = () => {
         sx={{ 
           position: 'relative',
           zIndex: 1,
-          py: { xs: 4, md: 5 },
+          py: { xs: 6, md: 8 },
           px: { xs: 3, sm: 4, md: 6 },
           background: 'linear-gradient(120deg, #2e7d32 0%, #60ad5e 100%)',
           color: 'white',
@@ -1151,6 +1154,27 @@ const PlantChatbot = () => {
           boxShadow: '0 4px 30px rgba(46, 125, 50, 0.2)'
         }}
       >
+        {/* NEW: Back to Home Button */}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/')}
+          sx={{
+            position: 'absolute',
+            top: { xs: 16, sm: 24 },
+            left: { xs: 16, sm: 24 },
+            color: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.5)',
+            backdropFilter: 'blur(5px)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderColor: 'white',
+            },
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Trang chủ
+        </Button>
         <Avatar 
           sx={{ 
             bgcolor: 'white', 

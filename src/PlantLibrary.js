@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, TextField, InputAdornment, IconButton, 
   Grid, Card, CardMedia, CardContent, Button, Paper, Chip, Pagination, 
@@ -239,6 +240,7 @@ const PlantRelationships = React.memo(({ plantName, onSelectPlant }) => {
 
 // Main PlantLibrary component
 const PlantLibrary = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -1448,6 +1450,27 @@ const PlantLibrary = () => {
                 }
               }}
             >
+            {/* NEW: Back to Home Button */}
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/')}
+              sx={{
+                position: 'absolute',
+                top: { xs: 16, sm: 24 },
+                left: { xs: 16, sm: 24 },
+                zIndex: 2, // Make sure it's above the parallax background
+                color: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  borderColor: 'white',
+                },
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Trang chủ
+            </Button>
               <Container maxWidth="xl" sx={{ height: '100%', position: 'relative', zIndex: 1 }}>
                 <Box sx={{ 
                   display: 'flex', 
