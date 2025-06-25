@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, IconButton,
-  Avatar, CircularProgress, Card, CardMedia, 
+  Avatar, CircularProgress, Card, CardMedia,
   CardContent, Grid, Chip, Dialog, DialogContent,
   DialogTitle, DialogActions, Fade, Zoom, useTheme,
   useMediaQuery, Tooltip, Snackbar, Alert, Stack, Badge, LinearProgress,
-  alpha, Container, Popover 
+  alpha, Container, Popover
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
@@ -48,7 +48,7 @@ const PlantChatbot = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textFieldRef = useRef(null);
-  
+
   // Main state
   const [messages, setMessages] = useState([
     {
@@ -66,7 +66,7 @@ const PlantChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   // Classification state
   const [classifications, setClassifications] = useState([]);
   const [showClassificationDialog, setShowClassificationDialog] = useState(false);
@@ -120,7 +120,7 @@ const PlantChatbot = () => {
         console.error('Error fetching plant metadata:', error);
       }
     };
-    
+
     fetchPlantMetadata();
   }, []);
   // Clipboard paste functionality
@@ -129,7 +129,7 @@ const PlantChatbot = () => {
       // Only handle paste when the chat interface is focused or no specific input is focused
       const activeElement = document.activeElement;
       const isInputFocused = activeElement && (
-        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||
         activeElement.contentEditable === 'true'
       );
@@ -142,7 +142,7 @@ const PlantChatbot = () => {
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) return;
 
-      const imageItems = Array.from(clipboardItems).filter(item => 
+      const imageItems = Array.from(clipboardItems).filter(item =>
         item.type.startsWith('image/')
       );
 
@@ -150,7 +150,7 @@ const PlantChatbot = () => {
 
       // Prevent default paste behavior for images
       event.preventDefault();
-      
+
       try {
         setPasteIndicator(true);
         setPasteError(null);
@@ -166,10 +166,10 @@ const PlantChatbot = () => {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const extension = blob.type.split('/')[1] || 'png';
             const filename = `pasted-image-${timestamp}.${extension}`;
-            
+
             // Create a File object with proper name
             const file = new File([blob], filename, { type: blob.type });
-            
+
             newFiles.push(file);
             newPreviewUrls.push(URL.createObjectURL(blob));
           }
@@ -179,7 +179,7 @@ const PlantChatbot = () => {
           // Add to existing files and previews
           setImageFiles(prev => [...prev, ...newFiles]);
           setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
-          
+
           // Show success indicator
           setPasteSuccess(true);
           setTimeout(() => setPasteSuccess(false), 2000);
@@ -233,52 +233,52 @@ const PlantChatbot = () => {
       document.removeEventListener('keydown', handleUserInteraction);
     };
   }, []);
-  
+
   // Handle file selection - now supports multiple files
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
     if (!files.length) return;
-    
+
     // Filter for valid image files
     const validImageFiles = files.filter(file => file.type.startsWith('image/'));
-    
+
     if (validImageFiles.length === 0) {
       setError('Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, etc.)');
       return;
     }
-    
+
     // Create preview URLs for all valid images
     const newPreviewUrls = validImageFiles.map(file => URL.createObjectURL(file));
-    
+
     // Add to existing files and previews
     setImageFiles(prev => [...prev, ...validImageFiles]);
     setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
-    
+
     // Hide paste hint after user uploads files
     setShowPasteHint(false);
   };
-  
+
   // Remove an individual image
   const removeImage = (index) => {
     // Revoke the object URL to prevent memory leaks
     URL.revokeObjectURL(imagePreviewUrls[index]);
-    
+
     // Remove the image from state
     setImageFiles(prev => prev.filter((_, i) => i !== index));
     setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
-  
+
   // Trigger file input click
   const triggerFileInput = () => {
     fileInputRef.current.click();
     setShowPasteHint(false);
   };
-  
+
   // Clear all selected images
   const clearAllImages = () => {
     // Revoke all object URLs
     imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
-    
+
     // Clear the arrays
     setImageFiles([]);
     setImagePreviewUrls([]);
@@ -290,7 +290,7 @@ const PlantChatbot = () => {
       setGalleryLoading(false);
       return;
     }
-    
+
     setGalleryLoading(true);
     try {
       const apiUrl = `${API_URL}/api/plant-images/${encodeURIComponent(scientificName)}`;
@@ -339,14 +339,34 @@ const PlantChatbot = () => {
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!inputMessage.trim() && imageFiles.length === 0) return;
-    
+
+    const trimmedMessage = inputMessage.trim();
+
+    if (!trimmedMessage && imageFiles.length === 0) return;
+
+    // --- NEW & IMPROVED: Handle the 'reset' command on the frontend ---
+    // This now runs BEFORE the user message is even added to the chat UI.
+    // It clears all relevant frontend context.
+    if (trimmedMessage.toLowerCase() === 'reset') {
+      console.log('🔄 Frontend reset triggered. Clearing selected plant and other context.');
+      setSelectedPlant(null);
+      setPendingQuestion(null);
+      setClassifications([]);
+      setShowClassificationDialog(false); // Also hide the dialog if it's open
+      
+      // It's also good practice to clear any attached images if the user types reset
+      if (imageFiles.length > 0) {
+        clearAllImages();
+      }
+    }
+
     // Generate a unique ID for this message
     const messageId = `msg_${Date.now()}`;
     const timestamp = new Date();
-    
+
     // Add user message to the chat
     let userMessages = [];
-    
+
     // If there's text input, add it as a message
     if (inputMessage.trim()) {
       userMessages.push({
@@ -357,7 +377,7 @@ const PlantChatbot = () => {
         timestamp
       });
     }
-    
+
     // If there are images, add them as a message
     if (imageFiles.length > 0) {
       userMessages.push({
@@ -368,17 +388,17 @@ const PlantChatbot = () => {
         timestamp: new Date(timestamp.getTime() + 1) // Add 1ms to ensure correct ordering
       });
     }
-    
+
     // Add user messages to the chat
     setMessages(prev => [...prev, ...userMessages]);
-    
+
     // Clear input
     setInputMessage('');
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Different flows based on what the user provided
       if (imageFiles.length > 0 && !inputMessage.trim()) {
         // Images only - Classify first
@@ -399,19 +419,19 @@ const PlantChatbot = () => {
       setUploadProgress(0);
     }
   };
-  
+
   // Handle image classification with multiple images
   const handleImageClassification = async (messageId, questionText = null) => {
     if (imageFiles.length === 0) return;
-    
+
     try {
       setClassificationLoading(true);
-      
+
       // Store question text for later use after plant selection
       if (questionText) {
         setPendingQuestion(questionText);
       }
-      
+
       // Add a "processing" message
       setMessages(prev => [...prev, {
         id: `${messageId}_processing`,
@@ -421,13 +441,13 @@ const PlantChatbot = () => {
         timestamp: new Date(),
         isProcessing: true
       }]);
-      
+
       // Prepare form data for multiple file upload
       const formData = new FormData();
       imageFiles.forEach((file, index) => {
         formData.append('files', file); // Note the plural 'files' name
       });
-      
+
       // Call API to classify the images
       const response = await fetch(`${API_URL}/api/classify`, {
         method: 'POST',
@@ -438,21 +458,21 @@ const PlantChatbot = () => {
           setUploadProgress(percentCompleted);
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Lỗi phân loại hình ảnh (HTTP ${response.status})`);
       }
-      
+
       const data = await response.json();
-      
+
       // Remove the processing message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-      
+
       if (data.results && data.results.length > 0) {
         // Check if the result indicates OOD (Out-of-Distribution)
         const firstResult = data.results[0];
         const isOOD = firstResult.label === "Không tồn tại trong cơ sở dữ liệu";
-        
+
         if (isOOD) {
           // Handle OOD case - show direct message without selection dialog
           setMessages(prev => [...prev, {
@@ -462,14 +482,14 @@ const PlantChatbot = () => {
             type: MESSAGE_TYPE.TEXT,
             timestamp: new Date()
           }]);
-          
+
           // Clear pending question since we can't proceed with classification
           setPendingQuestion(null);
         } else {
           // Normal classification results - show selection dialog
           // Store classifications
           setClassifications(data.results);
-          
+
           // Show the classifications in the chat
           setMessages(prev => [...prev, {
             id: `${messageId}_classification_results`,
@@ -478,12 +498,12 @@ const PlantChatbot = () => {
             type: MESSAGE_TYPE.CLASSIFICATION,
             timestamp: new Date()
           }]);
-          
+
           // Show selection message based on whether there's a pending question
-          const selectionPrompt = questionText 
+          const selectionPrompt = questionText
             ? 'Vui lòng chọn loài thực vật phù hợp để tiếp tục với câu hỏi của bạn.'
             : 'Vui lòng chọn loài thực vật phù hợp để tiếp tục.';
-            
+
           setMessages(prev => [...prev, {
             id: `${messageId}_selection_prompt`,
             content: selectionPrompt,
@@ -491,7 +511,7 @@ const PlantChatbot = () => {
             type: MESSAGE_TYPE.TEXT,
             timestamp: new Date()
           }]);
-          
+
           // Show the plant selection dialog
           setShowClassificationDialog(true);
         }
@@ -504,14 +524,14 @@ const PlantChatbot = () => {
           type: MESSAGE_TYPE.TEXT,
           timestamp: new Date()
         }]);
-        
+
         // Clear pending question since classification failed
         setPendingQuestion(null);
       }
     } catch (err) {
       console.error('Classification error:', err);
       setError(`Lỗi khi phân loại hình ảnh: ${err.message}`);
-      
+
       // Remove the processing message and add an error message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
       setMessages(prev => [...prev, {
@@ -522,7 +542,7 @@ const PlantChatbot = () => {
         timestamp: new Date(),
         isError: true
       }]);
-      
+
       // Clear pending question if there was an error
       setPendingQuestion(null);
     } finally {
@@ -547,12 +567,12 @@ const PlantChatbot = () => {
         return '';
       }
       const normalizedSearchName = normalizeName(scientificName);
-      
+
       // First try direct match
       if (plantMetadata[scientificName] && plantMetadata[scientificName]["Tên tiếng Việt"]) {
         return plantMetadata[scientificName]["Tên tiếng Việt"].split(';')[0].trim();
       }
-      
+
       // Then try normalized matching
       for (const [key, value] of Object.entries(plantMetadata)) {
         const normalizedKey = normalizeName(key);
@@ -560,7 +580,7 @@ const PlantChatbot = () => {
           return value["Tên tiếng Việt"].split(';')[0].trim();
         }
       }
-      
+
       // Finally try partial matching (contains)
       for (const [key, value] of Object.entries(plantMetadata)) {
         const normalizedKey = normalizeName(key);
@@ -570,14 +590,14 @@ const PlantChatbot = () => {
           }
         }
       }
-      
+
       return ''; // Return empty string if no match found
     };
   // Handle plant selection
   const handlePlantSelection = async (plantLabel, messageId) => {
     setSelectedPlant(plantLabel);
     setShowClassificationDialog(false);
-    
+
     // Add selection message to chat
     setMessages(prev => [...prev, {
       id: `${messageId}_selection`,
@@ -586,7 +606,7 @@ const PlantChatbot = () => {
       type: MESSAGE_TYPE.SELECTION,
       timestamp: new Date()
     }]);
-    
+
     // Confirmation from bot
     setMessages(prev => [...prev, {
       id: `${messageId}_selection_confirmation`,
@@ -595,13 +615,13 @@ const PlantChatbot = () => {
       type: MESSAGE_TYPE.TEXT,
       timestamp: new Date(Date.now() + 1)
     }]);
-    
+
     // If there's a pending question, automatically proceed with Q&A
     if (pendingQuestion) {
       const question = pendingQuestion;
       // Clear the pending question first to avoid reuse
       setPendingQuestion(null);
-      
+
       // Short delay to ensure messages appear in correct order
       setTimeout(() => {
         handleQuestionWithSelectedPlant(messageId, plantLabel, question);
@@ -617,7 +637,7 @@ const PlantChatbot = () => {
       }]);
     }
   };
-  
+
   // Handle text-only question (no image)
   const handleTextOnlyQuestion = async (messageId, question) => {
     try {
@@ -630,12 +650,12 @@ const PlantChatbot = () => {
         timestamp: new Date(),
         isProcessing: true
       }]);
-      
+
       // Check if we have a selected plant from previous interaction
       // If yes, use that plant's label for the question
       if (selectedPlant) {
         console.log(`Using previously selected plant: ${selectedPlant} for the question`);
-        
+
         try {
           // Call the QA API with the selected plant and question directly here
           const response = await fetch(`${API_URL}/api/qa`, {
@@ -649,16 +669,16 @@ const PlantChatbot = () => {
               session_id: sessionId
             }),
           });
-          
+
           if (!response.ok) {
             throw new Error(`Lỗi xử lý câu hỏi (HTTP ${response.status})`);
           }
-          
+
           const data = await response.json();
-          
+
           // Remove the processing message
           setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-          
+
           // Add the answer to the chat
           setMessages(prev => [...prev, {
             id: `${messageId}_answer`,
@@ -667,14 +687,14 @@ const PlantChatbot = () => {
             type: MESSAGE_TYPE.TEXT,
             timestamp: new Date()
           }]);
-          
+
           return; // Exit the function after handling
         } catch (err) {
           console.error('Plant-specific QA error:', err);
-          
+
           // Remove the processing message
           setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-          
+
           // Add an error message
           setMessages(prev => [...prev, {
             id: `${messageId}_error`,
@@ -684,11 +704,11 @@ const PlantChatbot = () => {
             timestamp: new Date(),
             isError: true
           }]);
-          
+
           return; // Exit the function after handling
         }
       }
-      
+
       // If no plant is selected, proceed with general question
       // Send to the QA endpoint without a label
       const response = await fetch(`${API_URL}/api/qa`, {
@@ -702,16 +722,16 @@ const PlantChatbot = () => {
           // Do not include a label since we don't have a specific plant selected
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Lỗi xử lý câu hỏi (HTTP ${response.status})`);
       }
-      
+
       const data = await response.json();
-      
+
       // Remove the processing message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-      
+
       // Add the answer to the chat
       setMessages(prev => [...prev, {
         id: `${messageId}_answer`,
@@ -722,10 +742,10 @@ const PlantChatbot = () => {
       }]);
     } catch (err) {
       console.error('QA error:', err);
-      
+
       // Remove the processing message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-      
+
       // Add an error message
       setMessages(prev => [...prev, {
         id: `${messageId}_error`,
@@ -737,7 +757,7 @@ const PlantChatbot = () => {
       }]);
     }
   };
-  
+
   // Handle question with a selected plant
   const handleQuestionWithSelectedPlant = async (messageId, plantLabel, question) => {
     try {
@@ -750,7 +770,7 @@ const PlantChatbot = () => {
         timestamp: new Date(),
         isProcessing: true
       }]);
-      
+
       // Call the QA API with the selected plant and question
       const response = await fetch(`${API_URL}/api/qa`, {
         method: 'POST',
@@ -763,16 +783,16 @@ const PlantChatbot = () => {
           session_id: sessionId
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Lỗi xử lý câu hỏi (HTTP ${response.status})`);
       }
-      
+
       const data = await response.json();
-      
+
       // Remove the processing message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-      
+
       // Add the answer to the chat
       setMessages(prev => [...prev, {
         id: `${messageId}_answer`,
@@ -783,10 +803,10 @@ const PlantChatbot = () => {
       }]);
     } catch (err) {
       console.error('QA error:', err);
-      
+
       // Remove the processing message
       setMessages(prev => prev.filter(m => m.id !== `${messageId}_processing`));
-      
+
       // Add an error message
       setMessages(prev => [...prev, {
         id: `${messageId}_error`,
@@ -798,7 +818,7 @@ const PlantChatbot = () => {
       }]);
     }
   };
-  
+
   // Handle Enter key press
   const handleKeyPress = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -806,12 +826,12 @@ const PlantChatbot = () => {
       handleSendMessage();
     }
   };
-  
+
   // Handle dismiss error
   const handleDismissError = () => {
     setError(null);
   };
-  
+
   // Get representative image path
   const getRepresentativeImagePath = (label) => {
     if (!label) return PLACEHOLDER_IMAGE;
@@ -819,12 +839,12 @@ const PlantChatbot = () => {
     const safeLabel = label.replace(/\s+/g, '_');
     return `/representative_images/${safeLabel}.jpg`;
   };
-  
+
   // Custom markdown components with Material-UI styling
   const markdownComponents = {
     h1: ({ children }) => (
-      <Typography variant="h4" component="h1" gutterBottom sx={{ 
-        fontWeight: 600, 
+      <Typography variant="h4" component="h1" gutterBottom sx={{
+        fontWeight: 600,
         color: 'primary.dark',
         mt: 2,
         mb: 1.5
@@ -833,8 +853,8 @@ const PlantChatbot = () => {
       </Typography>
     ),
     h2: ({ children }) => (
-      <Typography variant="h5" component="h2" gutterBottom sx={{ 
-        fontWeight: 600, 
+      <Typography variant="h5" component="h2" gutterBottom sx={{
+        fontWeight: 600,
         color: 'primary.dark',
         mt: 2,
         mb: 1.5
@@ -843,8 +863,8 @@ const PlantChatbot = () => {
       </Typography>
     ),
     h3: ({ children }) => (
-      <Typography variant="h6" component="h3" gutterBottom sx={{ 
-        fontWeight: 600, 
+      <Typography variant="h6" component="h3" gutterBottom sx={{
+        fontWeight: 600,
         color: 'primary.main',
         mt: 1.5,
         mb: 1
@@ -853,7 +873,7 @@ const PlantChatbot = () => {
       </Typography>
     ),
     p: ({ children }) => (
-      <Typography variant="body1" paragraph sx={{ mb: 1.5, lineHeight: 1.6 }}>
+      <Typography variant="body1" paragraph sx={{ mb: 1.5, lineHeight: 1.7, fontSize: { xs: '1rem', md: '1.05rem' } }}>
         {children}
       </Typography>
     ),
@@ -868,8 +888,8 @@ const PlantChatbot = () => {
       </Typography>
     ),
     ul: ({ children }) => (
-      <Box component="ul" sx={{ 
-        pl: 3, 
+      <Box component="ul" sx={{
+        pl: 3,
         mb: 2,
         '& > li': {
           mb: 0.5,
@@ -882,8 +902,8 @@ const PlantChatbot = () => {
       </Box>
     ),
     ol: ({ children }) => (
-      <Box component="ol" sx={{ 
-        pl: 3, 
+      <Box component="ol" sx={{
+        pl: 3,
         mb: 2,
         '& > li': {
           mb: 0.5,
@@ -897,7 +917,7 @@ const PlantChatbot = () => {
       </Box>
     ),
     li: ({ children }) => (
-      <Typography component="li" variant="body1" sx={{ lineHeight: 1.6 }}>
+      <Typography component="li" variant="body1" sx={{ lineHeight: 1.7, fontSize: { xs: '1rem', md: '1.05rem' } }}>
         {children}
       </Typography>
     ),
@@ -946,7 +966,7 @@ const PlantChatbot = () => {
       )
     )
   };
-  
+
   // Render message based on its type
   const renderMessage = (message) => {
     switch (message.type) {
@@ -964,25 +984,25 @@ const PlantChatbot = () => {
                 {message.content}
               </ReactMarkdown>
             ) : (
-              // Render user messages as plain text
-              <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
+              // Render user messages as plain text with larger font
+              <Typography variant="body1" component="div" sx={{ fontSize: { xs: '1rem', md: '1.05rem' }, whiteSpace: 'pre-wrap' }}>
                 {message.content}
               </Typography>
             )}
           </Box>
         );
-        
+
       case MESSAGE_TYPE.IMAGE:
         return (
           <Box sx={{ maxWidth: '100%', borderRadius: 3, overflow: 'hidden' }}>
-            <img 
-              src={message.content} 
+            <img
+              src={message.content}
               alt="Uploaded"
               style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain' }}
             />
           </Box>
         );
-        
+
       case MESSAGE_TYPE.MULTI_IMAGE:
         return (
           <Box>
@@ -1017,7 +1037,7 @@ const PlantChatbot = () => {
             </Grid>
           </Box>
         );
-        
+
       case MESSAGE_TYPE.CLASSIFICATION:
         return (
           <Box>
@@ -1027,10 +1047,10 @@ const PlantChatbot = () => {
             <Grid container spacing={2} sx={{ mt: 1 }}>
               {message.content.map((result, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card 
+                  <Card
                   onMouseEnter={(e) => handleCardMouseEnter(e, result.label)}
                   onMouseLeave={handlePopoverClose}
-                    sx={{ 
+                    sx={{
                       cursor: 'pointer',
                       borderRadius: 4,
                       overflow: 'hidden',
@@ -1060,11 +1080,11 @@ const PlantChatbot = () => {
                           }
                         }}
                       />
-                      <Box sx={{ 
-                        position: 'absolute', 
-                        bottom: 0, 
-                        left: 0, 
-                        right: 0, 
+                      <Box sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
                         background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
                         p: 1.5
                       }}>
@@ -1074,16 +1094,16 @@ const PlantChatbot = () => {
                       </Box>
                     </Box>
                     <CardContent sx={{ pt: 2, pb: '16px !important' }}>
-                      <Typography variant="subtitle1" component="div" sx={{ 
-                        color: 'primary.dark', 
+                      <Typography variant="subtitle1" component="div" sx={{
+                        color: 'primary.dark',
                         fontWeight: 600,
                         mb: 0.5
                       }}>
                         {getVietnameseName(result.label) ? getVietnameseName(result.label) : 'Chưa có tên tiếng Việt'}
                       </Typography>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'space-between'
                       }}>
                       </Box>
@@ -1094,7 +1114,7 @@ const PlantChatbot = () => {
             </Grid>
           </Box>
         );
-        
+
       case MESSAGE_TYPE.SELECTION:
         return (
           <Chip
@@ -1102,7 +1122,7 @@ const PlantChatbot = () => {
             label={`Đã chọn: ${message.content.label}`}
             color="success"
             variant="filled"
-            sx={{ 
+            sx={{
               borderRadius: '20px',
               px: 1,
               fontWeight: 500,
@@ -1113,14 +1133,14 @@ const PlantChatbot = () => {
             }}
           />
         );
-        
+
       default:
         return <Typography>{message.content}</Typography>;
     }
   };
-  
+
   return (
-    <Box sx={{ 
+    <Box sx={{
       margin: { xs: '-16px', sm: '-24px' }, // Negative margin to break out of container
       minHeight: '100vh',
       display: 'flex',
@@ -1140,8 +1160,8 @@ const PlantChatbot = () => {
       }
     }}>
       {/* Header - Directly on the background */}
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           position: 'relative',
           zIndex: 1,
           py: { xs: 6, md: 8 },
@@ -1175,11 +1195,11 @@ const PlantChatbot = () => {
         >
           Trang chủ
         </Button>
-        <Avatar 
-          sx={{ 
-            bgcolor: 'white', 
+        <Avatar
+          sx={{
+            bgcolor: 'white',
             color: 'primary.main',
-            width: 64, 
+            width: 64,
             height: 64,
             boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
             transition: 'all 0.3s ease',
@@ -1190,7 +1210,7 @@ const PlantChatbot = () => {
         >
           <PlantIcon sx={{ fontSize: 36 }} />
         </Avatar>
-        
+
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: 0.5, mb: 1 }}>
             Trợ lý Thực vật
@@ -1226,18 +1246,18 @@ const PlantChatbot = () => {
               💡 Mẹo hữu ích: Bạn có thể dán hình ảnh trực tiếp!
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Nhấn <Box component="span" sx={{ 
-                px: 0.5, 
-                py: 0.25, 
-                bgcolor: 'rgba(0,0,0,0.1)', 
-                borderRadius: 1, 
+              Nhấn <Box component="span" sx={{
+                px: 0.5,
+                py: 0.25,
+                bgcolor: 'rgba(0,0,0,0.1)',
+                borderRadius: 1,
                 fontFamily: 'monospace',
                 fontSize: '0.85em'
               }}>Ctrl+V</Box> để dán hình ảnh từ clipboard
             </Typography>
           </Box>
-          <IconButton 
-            size="small" 
+          <IconButton
+            size="small"
             onClick={() => setShowPasteHint(false)}
             sx={{ color: 'text.secondary' }}
           >
@@ -1272,249 +1292,245 @@ const PlantChatbot = () => {
           </Typography>
         </Box>
       </Fade>
-      
-      {/* Message area - Direct on background with Container */}
-      <Box 
-        sx={{ 
+
+      {/* Message area - Now uses padding instead of Container for a wider feel */}
+      <Box
+        sx={{
           flexGrow: 1,
           position: 'relative',
           zIndex: 1,
           py: 4,
+          px: { xs: 2, sm: 3, md: 4 }, // Use padding for horizontal spacing
           overflowY: 'auto',
           maxHeight: { xs: 'calc(100vh - 300px)', sm: 'calc(100vh - 350px)' },
           display: 'flex',
           flexDirection: 'column'
         }}
       >
-        <Container maxWidth="xl" sx={{ flexGrow: 1, height: '100%' }}>
-          {messages.map((message) => (
-            <Fade in={true} key={message.id} timeout={600}>
+        {messages.map((message) => (
+          <Fade in={true} key={message.id} timeout={600}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: message.sender === SENDER.USER ? 'row-reverse' : 'row',
+                mb: 4,
+                alignItems: 'flex-start',
+                width: '100%'
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: message.sender === SENDER.USER ? 'secondary.main' : 'primary.main',
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  ml: message.sender === SENDER.USER ? { xs: 1.5, sm: 2 } : 0,
+                  mr: message.sender === SENDER.USER ? 0 : { xs: 1.5, sm: 2 },
+                  boxShadow: message.sender === SENDER.USER
+                    ? '0 4px 12px rgba(156, 39, 176, 0.2)'
+                    : '0 4px 12px rgba(46, 125, 50, 0.2)',
+                  transform: message.sender === SENDER.USER ? 'rotate(5deg)' : 'rotate(-5deg)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: message.sender === SENDER.USER ? 'scale(1.1) rotate(5deg)' : 'scale(1.1) rotate(-5deg)'
+                  }
+                }}
+              >
+                {message.sender === SENDER.USER ? <PersonIcon /> : <BotIcon />}
+              </Avatar>
+
               <Box
                 sx={{
-                  display: 'flex',
-                  flexDirection: message.sender === SENDER.USER ? 'row-reverse' : 'row',
-                  mb: 4,
-                  alignItems: 'flex-start',
-                  width: '100%'
+                  // Adjusted maxWidth for better readability on large screens
+                  maxWidth: { xs: '88%', sm: '80%', md: '75%', lg: '800px' },
+                  bgcolor: message.sender === SENDER.USER
+                    ? 'linear-gradient(135deg, #9c27b0 0%, #ab47bc 100%)'
+                    : 'white',
+                  color: message.sender === SENDER.USER ? 'white' : 'inherit',
+                  p: { xs: 2, sm: 3 },
+                  borderRadius: message.sender === SENDER.USER
+                    ? '20px 4px 20px 20px'
+                    : '4px 20px 20px 20px',
+                  boxShadow: message.sender === SENDER.USER
+                    ? '0 6px 16px rgba(0,0,0,0.1)'
+                    : '0 6px 16px rgba(0,0,0,0.06)',
+                  background: message.sender === SENDER.USER
+                    ? 'linear-gradient(135deg, #9c27b0 0%, #ab47bc 100%)'
+                    : 'white',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: message.sender === SENDER.USER
+                      ? '0 8px 24px rgba(0,0,0,0.12)'
+                      : '0 8px 24px rgba(0,0,0,0.09)',
+                    transform: 'translateY(-2px)'
+                  },
+                  ...(message.isError && {
+                    background: 'linear-gradient(135deg, #f44336 0%, #e57373 100%)',
+                    color: 'white',
+                  })
                 }}
               >
-                <Avatar
+                {renderMessage(message)}
+
+                <Typography
+                  variant="caption"
+                  display="block"
                   sx={{
-                    bgcolor: message.sender === SENDER.USER ? 'secondary.main' : 'primary.main',
-                    width: { xs: 40, sm: 48 },
-                    height: { xs: 40, sm: 48 },
-                    ml: message.sender === SENDER.USER ? { xs: 1.5, sm: 2 } : 0,
-                    mr: message.sender === SENDER.USER ? 0 : { xs: 1.5, sm: 2 },
-                    boxShadow: message.sender === SENDER.USER 
-                      ? '0 4px 12px rgba(156, 39, 176, 0.2)' 
-                      : '0 4px 12px rgba(46, 125, 50, 0.2)',
-                    transform: message.sender === SENDER.USER ? 'rotate(5deg)' : 'rotate(-5deg)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: message.sender === SENDER.USER ? 'scale(1.1) rotate(5deg)' : 'scale(1.1) rotate(-5deg)'
-                    }
+                    mt: 1.5,
+                    textAlign: message.sender === SENDER.USER ? 'right' : 'left',
+                    color: message.sender === SENDER.USER ? 'rgba(255,255,255,0.8)' : 'text.secondary',
+                    fontSize: '0.7rem',
+                    opacity: 0.8
                   }}
                 >
-                  {message.sender === SENDER.USER ? <PersonIcon /> : <BotIcon />}
-                </Avatar>
-                
-                <Box
-                  sx={{
-                    maxWidth: { xs: '80%', md: '70%', lg: '60%' },
-                    bgcolor: message.sender === SENDER.USER 
-                      ? 'linear-gradient(135deg, #9c27b0 0%, #ab47bc 100%)' 
-                      : 'white',
-                    color: message.sender === SENDER.USER ? 'white' : 'inherit',
-                    p: { xs: 2, sm: 3 },
-                    borderRadius: message.sender === SENDER.USER 
-                      ? '20px 4px 20px 20px' 
-                      : '4px 20px 20px 20px',
-                    boxShadow: message.sender === SENDER.USER 
-                      ? '0 6px 16px rgba(0,0,0,0.1)' 
-                      : '0 6px 16px rgba(0,0,0,0.06)',
-                    background: message.sender === SENDER.USER 
-                      ? 'linear-gradient(135deg, #9c27b0 0%, #ab47bc 100%)' 
-                      : 'white',
-                    position: 'relative',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: message.sender === SENDER.USER 
-                        ? '0 8px 24px rgba(0,0,0,0.12)' 
-                        : '0 8px 24px rgba(0,0,0,0.09)',
-                      transform: 'translateY(-2px)'
-                    },
-                    ...(message.isError && {
-                      background: 'linear-gradient(135deg, #f44336 0%, #e57373 100%)',
-                      color: 'white',
-                    })
-                  }}
-                >
-                  {renderMessage(message)}
-                  
-                  <Typography 
-                    variant="caption" 
-                    display="block" 
-                    sx={{ 
-                      mt: 1.5, 
-                      textAlign: message.sender === SENDER.USER ? 'right' : 'left',
-                      color: message.sender === SENDER.USER ? 'rgba(255,255,255,0.8)' : 'text.secondary',
-                      fontSize: '0.7rem',
-                      opacity: 0.8
-                    }}
-                  >
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Typography>
-                </Box>
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Typography>
               </Box>
-            </Fade>
-          ))}
-          <div ref={messagesEndRef} />
-        </Container>
-      </Box>
-      
-      {/* Image Previews - Direct above input area */}
-      {imagePreviewUrls.length > 0 && (
-        <Container maxWidth="xl">
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ 
-                color: 'primary.dark', 
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center'
-              }}>
-                <ImageIcon sx={{ mr: 0.5, fontSize: 18 }} />
-                {imagePreviewUrls.length} hình ảnh đã chọn
-              </Typography>
-              <Button 
-                size="small" 
-                startIcon={<DeleteIcon />} 
-                onClick={clearAllImages}
-                color="error"
-                variant="outlined"
-                sx={{
-                  borderRadius: 20,
-                  px: 2,
-                  '&:hover': {
-                    boxShadow: '0 4px 8px rgba(244, 67, 54, 0.2)'
-                  }
-                }}
-              >
-                Xóa tất cả
-              </Button>
             </Box>
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                flexWrap: 'nowrap', 
-                overflowX: 'auto',
-                gap: 1.5,
-                pb: 1.5,
-                pt: 0.5,
-                px: 0.5,
-                '&::-webkit-scrollbar': {
-                  height: '8px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: 'rgba(0,0,0,0.04)',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: '#60ad5e',
-                  borderRadius: '4px',
-                  '&:hover': {
-                    background: '#2e7d32',
-                  }
+          </Fade>
+        ))}
+        <div ref={messagesEndRef} />
+      </Box>
+
+      {/* Image Previews - Adjusted to use padding */}
+      {imagePreviewUrls.length > 0 && (
+        <Box sx={{ mb: 2, px: { xs: 2, sm: 3, md: 4 } }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="body2" sx={{
+              color: 'primary.dark',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <ImageIcon sx={{ mr: 0.5, fontSize: 18 }} />
+              {imagePreviewUrls.length} hình ảnh đã chọn
+            </Typography>
+            <Button
+              size="small"
+              startIcon={<DeleteIcon />}
+              onClick={clearAllImages}
+              color="error"
+              variant="outlined"
+              sx={{
+                borderRadius: 20,
+                px: 2,
+                '&:hover': {
+                  boxShadow: '0 4px 8px rgba(244, 67, 54, 0.2)'
                 }
               }}
             >
-              {imagePreviewUrls.map((url, index) => (
-                <Box 
-                  key={index}
-                  sx={{ 
-                    position: 'relative',
-                    width: 120,
-                    height: 120,
-                    flexShrink: 0,
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    transition: 'all 0.3s ease',
-                    transform: 'translateY(0)',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                    }
-                  }}
-                >
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      right: 8,
-                      top: 8,
-                      bgcolor: 'rgba(0, 0, 0, 0.6)',
-                      color: 'white',
-                      width: 24,
-                      height: 24,
-                      p: 0,
-                      '&:hover': {
-                        bgcolor: 'rgba(244, 67, 54, 0.9)',
-                        transform: 'rotate(90deg)',
-                      },
-                      transition: 'all 0.2s ease',
-                      zIndex: 1
-                    }}
-                    onClick={() => removeImage(index)}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                  <img 
-                    src={url} 
-                    alt={`Preview ${index + 1}`} 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover',
-                      display: 'block',
-                      transition: 'transform 0.5s ease',
-                    }} 
-                  />
-                </Box>
-              ))}
-            </Box>
+              Xóa tất cả
+            </Button>
           </Box>
-        </Container>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+              gap: 1.5,
+              pb: 1.5,
+              pt: 0.5,
+              px: 0.5,
+              '&::-webkit-scrollbar': {
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(0,0,0,0.04)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#60ad5e',
+                borderRadius: '4px',
+                '&:hover': {
+                  background: '#2e7d32',
+                }
+              }
+            }}
+          >
+            {imagePreviewUrls.map((url, index) => (
+              <Box
+                key={index}
+                sx={{
+                  position: 'relative',
+                  width: 120,
+                  height: 120,
+                  flexShrink: 0,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  transition: 'all 0.3s ease',
+                  transform: 'translateY(0)',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                  }
+                }}
+              >
+                <IconButton
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    bgcolor: 'rgba(0, 0, 0, 0.6)',
+                    color: 'white',
+                    width: 24,
+                    height: 24,
+                    p: 0,
+                    '&:hover': {
+                      bgcolor: 'rgba(244, 67, 54, 0.9)',
+                      transform: 'rotate(90deg)',
+                    },
+                    transition: 'all 0.2s ease',
+                    zIndex: 1
+                  }}
+                  onClick={() => removeImage(index)}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+                <img
+                  src={url}
+                  alt={`Preview ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'transform 0.5s ease',
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
       )}
 
       {/* Upload progress indicator */}
       {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
-        <Container maxWidth="xl">
-          <Box sx={{ width: '100%', mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              <Typography variant="caption" color="primary">
-                Đang tải lên: {uploadProgress}%
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {Math.round(uploadProgress/10)}/10
-              </Typography>
-            </Box>
-            <LinearProgress 
-              variant="determinate" 
-              value={uploadProgress} 
-              sx={{ 
-                height: 8, 
-                borderRadius: 4,
-                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                '& .MuiLinearProgress-bar': {
-                  background: 'linear-gradient(90deg, #2e7d32, #60ad5e)'
-                }
-              }}
-            />
+        <Box sx={{ width: '100%', mb: 2, px: { xs: 2, sm: 3, md: 4 } }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+            <Typography variant="caption" color="primary">
+              Đang tải lên: {uploadProgress}%
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {Math.round(uploadProgress/10)}/10
+            </Typography>
           </Box>
-        </Container>
+          <LinearProgress
+            variant="determinate"
+            value={uploadProgress}
+            sx={{
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              '& .MuiLinearProgress-bar': {
+                background: 'linear-gradient(90deg, #2e7d32, #60ad5e)'
+              }
+            }}
+          />
+        </Box>
       )}
-      
+
       {/* Input Area - Floating at the bottom */}
       <Box
         sx={{
@@ -1523,121 +1539,123 @@ const PlantChatbot = () => {
           left: 0,
           right: 0,
           zIndex: 10,
-          p: { xs: 2, sm: 3, md: 4 },
+          py: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 3, md: 4 },
           background: 'rgba(255, 255, 255, 0.9)',
           backdropFilter: 'blur(10px)',
           borderTop: '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.06)'
         }}
       >
-        <Container maxWidth="xl">
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'flex-end',
-            gap: 2
-          }}>
-            <Badge
-              badgeContent={imageFiles.length}
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 2,
+          maxWidth: '1280px', // Center and constrain input controls
+          mx: 'auto'
+        }}>
+          <Badge
+            badgeContent={imageFiles.length}
+            color="primary"
+            invisible={imageFiles.length === 0}
+            max={99}
+          >
+            <IconButton
               color="primary"
-              invisible={imageFiles.length === 0}
-              max={99}
-            >
-              <IconButton 
-                color="primary"
-                onClick={triggerFileInput}
-                disabled={isLoading}
-                sx={{
-                  boxShadow: '0 2px 10px rgba(46, 125, 50, 0.12)',
-                  bgcolor: alpha(theme.palette.primary.main, 0.05),
-                  transition: 'all 0.2s ease',
-                  p: 2,
-                  '&:hover': {
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    transform: 'scale(1.1)',
-                    boxShadow: '0 4px 14px rgba(46, 125, 50, 0.2)',
-                  }
-                }}
-              >
-                <AttachFileIcon />
-              </IconButton>
-            </Badge>
-            
-            <TextField
-              ref={textFieldRef}
-              fullWidth
-              variant="outlined"
-              placeholder="Nhập câu hỏi hoặc đính kèm hình ảnh... (Hoặc nhấn Ctrl+V để dán hình ảnh)"
-              multiline
-              maxRows={4}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onClick={triggerFileInput}
               disabled={isLoading}
-              InputProps={{
-                sx: {
-                  borderRadius: 6,
-                  backgroundColor: 'white',
-                  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
-                  transition: 'all 0.3s ease',
-                  py: 1.5,
-                  px: 2,
-                  '&.Mui-focused': {
-                    boxShadow: '0 4px 20px rgba(46, 125, 50, 0.15)',
-                    transform: 'translateY(-2px)'
-                  },
-                  '&:hover': {
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-                  }
-                }
-              }}
-            />
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: 'none' }}
-              onChange={handleFileSelect}
-            />
-            
-            <Button
-              variant="contained"
-              color="primary"
-              endIcon={isLoading ? 
-                <CircularProgress size={20} color="inherit" /> : 
-                <SendIcon sx={{ ml: 0.5 }} />
-              }
-              onClick={handleSendMessage}
-              disabled={isLoading || (!inputMessage.trim() && imageFiles.length === 0)}
-              sx={{ 
-                borderRadius: 6,
-                height: 56,
-                px: { xs: 3, sm: 4 },
-                minWidth: { xs: 56, sm: 120 },
-                whiteSpace: 'nowrap',
-                boxShadow: '0 4px 14px rgba(46, 125, 50, 0.25)',
-                background: 'linear-gradient(135deg, #2e7d32 0%, #60ad5e 100%)',
-                transition: 'all 0.3s ease',
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                fontSize: { xs: '0.9rem', sm: '1rem' },
+              sx={{
+                boxShadow: '0 2px 10px rgba(46, 125, 50, 0.12)',
+                bgcolor: alpha(theme.palette.primary.main, 0.05),
+                transition: 'all 0.2s ease',
+                p: 2,
                 '&:hover': {
-                  boxShadow: '0 6px 20px rgba(46, 125, 50, 0.35)',
-                  transform: 'translateY(-3px)'
-                },
-                '&:active': {
-                  boxShadow: '0 2px 10px rgba(46, 125, 50, 0.2)',
-                  transform: 'translateY(0)'
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 4px 14px rgba(46, 125, 50, 0.2)',
                 }
               }}
             >
-              {isMobile ? '' : 'Gửi'}
-            </Button>
-          </Box>
-        </Container>
+              <AttachFileIcon />
+            </IconButton>
+          </Badge>
+
+          <TextField
+            ref={textFieldRef}
+            fullWidth
+            variant="outlined"
+            placeholder="Nhập câu hỏi hoặc đính kèm hình ảnh... (Hoặc nhấn Ctrl+V để dán hình ảnh)"
+            multiline
+            maxRows={4}
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
+            InputProps={{
+              sx: {
+                borderRadius: 6,
+                backgroundColor: 'white',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
+                transition: 'all 0.3s ease',
+                py: 1.5,
+                px: 2,
+                fontSize: '1.05rem', // Slightly larger input text
+                '&.Mui-focused': {
+                  boxShadow: '0 4px 20px rgba(46, 125, 50, 0.15)',
+                  transform: 'translateY(-2px)'
+                },
+                '&:hover': {
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                }
+              }
+            }}
+          />
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={isLoading ?
+              <CircularProgress size={20} color="inherit" /> :
+              <SendIcon sx={{ ml: 0.5 }} />
+            }
+            onClick={handleSendMessage}
+            disabled={isLoading || (!inputMessage.trim() && imageFiles.length === 0)}
+            sx={{
+              borderRadius: 6,
+              height: 56,
+              px: { xs: 3, sm: 4 },
+              minWidth: { xs: 56, sm: 120 },
+              whiteSpace: 'nowrap',
+              boxShadow: '0 4px 14px rgba(46, 125, 50, 0.25)',
+              background: 'linear-gradient(135deg, #2e7d32 0%, #60ad5e 100%)',
+              transition: 'all 0.3s ease',
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(46, 125, 50, 0.35)',
+                transform: 'translateY(-3px)'
+              },
+              '&:active': {
+                boxShadow: '0 2px 10px rgba(46, 125, 50, 0.2)',
+                transform: 'translateY(0)'
+              }
+            }}
+          >
+            {isMobile ? '' : 'Gửi'}
+          </Button>
+        </Box>
       </Box>
-      
+
       {/* Classification selection dialog */}
       <Dialog
         open={showClassificationDialog}
@@ -1654,7 +1672,7 @@ const PlantChatbot = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
+        <DialogTitle sx={{
           background: 'linear-gradient(120deg, #2e7d32 0%, #60ad5e 100%)',
           color: 'white',
           px: 3,
@@ -1669,10 +1687,10 @@ const PlantChatbot = () => {
           <Grid container spacing={3}>
             {classifications.map((result, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card 
+                <Card
                 onMouseEnter={(e) => handleCardMouseEnter(e, result.label)}
                 onMouseLeave={handlePopoverClose}
-                  sx={{ 
+                  sx={{
                     cursor: 'pointer',
                     borderRadius: 4,
                     overflow: 'hidden',
@@ -1705,16 +1723,16 @@ const PlantChatbot = () => {
                         }
                       }}
                     />
-                    <Box sx={{ 
-                      position: 'absolute', 
-                      bottom: 0, 
-                      left: 0, 
-                      right: 0, 
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
                       background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
                       p: 2
                     }}>
-                      <Typography variant="h6" component="div" sx={{ 
-                        color: 'white', 
+                      <Typography variant="h6" component="div" sx={{
+                        color: 'white',
                         fontWeight: 600,
                         textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                       }}>
@@ -1723,21 +1741,21 @@ const PlantChatbot = () => {
                     </Box>
                   </Box>
                   <CardContent sx={{ pt: 2, pb: '16px !important' }}>
-                      <Typography variant="subtitle1" component="div" sx={{ 
-                        color: 'primary.dark', 
+                      <Typography variant="subtitle1" component="div" sx={{
+                        color: 'primary.dark',
                         fontWeight: 600,
                         mb: 0.5
                       }}>
                         {getVietnameseName(result.label) ? getVietnameseName(result.label) : 'Chưa có tên tiếng Việt'}
                       </Typography>
-                      
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'space-between'
                       }}>
-                        
-                        
+
+
                       </Box>
                     </CardContent>
                 </Card>
@@ -1746,8 +1764,8 @@ const PlantChatbot = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={() => setShowClassificationDialog(false)} 
+          <Button
+            onClick={() => setShowClassificationDialog(false)}
             color="primary"
             variant="outlined"
             sx={{
@@ -1759,7 +1777,7 @@ const PlantChatbot = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Success/Error Snackbars */}
       <Snackbar
         open={!!error}
@@ -1767,10 +1785,10 @@ const PlantChatbot = () => {
         onClose={handleDismissError}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleDismissError} 
-          severity="error" 
-          sx={{ 
+        <Alert
+          onClose={handleDismissError}
+          severity="error"
+          sx={{
             width: '100%',
             borderRadius: 3,
             boxShadow: '0 4px 20px rgba(211, 47, 47, 0.2)'
@@ -1786,10 +1804,10 @@ const PlantChatbot = () => {
         onClose={() => setPasteSuccess(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
+        <Alert
           onClose={() => setPasteSuccess(false)}
-          severity="success" 
-          sx={{ 
+          severity="success"
+          sx={{
             width: '100%',
             borderRadius: 3,
             boxShadow: '0 4px 20px rgba(46, 125, 50, 0.2)'
@@ -1805,10 +1823,10 @@ const PlantChatbot = () => {
         onClose={() => setPasteError(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
+        <Alert
           onClose={() => setPasteError(null)}
-          severity="error" 
-          sx={{ 
+          severity="error"
+          sx={{
             width: '100%',
             borderRadius: 3,
             boxShadow: '0 4px 20px rgba(211, 47, 47, 0.2)'
@@ -1817,9 +1835,9 @@ const PlantChatbot = () => {
           {pasteError}
         </Alert>
       </Snackbar>
-      
+
       {/* Floating background elements */}
-      <Box 
+      <Box
         sx={{
           position: 'absolute',
           top: '20%',
@@ -1833,8 +1851,8 @@ const PlantChatbot = () => {
           display: { xs: 'none', lg: 'block' }
         }}
       />
-      
-      <Box 
+
+      <Box
         sx={{
           position: 'absolute',
           bottom: '30%',
